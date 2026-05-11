@@ -1,4 +1,4 @@
-name: Build Only Gateway and Session for Windows
+name: Build Gnetway and Session only
 
 on:
   workflow_dispatch:
@@ -20,24 +20,23 @@ jobs:
           go mod edit -replace github.com/teamgram/gnet/v2=github.com/panjf2000/gnet/v2@v2.6.0
           go mod tidy
 
-      - name: Build Gateway
+      - name: Build Gnetway
         shell: pwsh
         run: |
-          $binDir = "bin"
-          New-Item -ItemType Directory -Force -Path $binDir
-          Push-Location app/interface/gateway/cmd/gateway
-          go build -o (Join-Path (Get-Location) "..\..\..\..\..\$binDir\gateway.exe")
-          Pop-Location
+          mkdir bin
+          cd app\interface\gnetway\cmd\gnetway
+          go build -o ..\..\..\..\..\bin\gnetway.exe
+          cd ..\..\..\..\..
 
       - name: Build Session
         shell: pwsh
         run: |
-          Push-Location app/interface/session/cmd/session
-          go build -o (Join-Path (Get-Location) "..\..\..\..\..\bin\session.exe")
-          Pop-Location
+          cd app\interface\session\cmd\session
+          go build -o ..\..\..\..\..\bin\session.exe
+          cd ..\..\..\..\..
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: teamgram-light-windows
+          name: teamgram-gateway-only
           path: bin/
