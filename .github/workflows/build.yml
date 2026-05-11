@@ -1,4 +1,4 @@
-name: Build Session and Httpserver (Stable)
+name: Build Teamgram Binaries for Windows
 
 on:
   workflow_dispatch:
@@ -14,23 +14,29 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Build Session
+      - name: Fix gnet dependency for Windows
         shell: pwsh
         run: |
-          mkdir bin
-          cd app\interface\session\cmd\session
-          go build -o ..\..\..\..\..\bin\session.exe
-          cd ..\..\..\..\..
+          go mod edit -replace github.com/teamgram/gnet/v2=github.com/panjf2000/gnet/v2@v2.6.0
+          go mod tidy
 
-      - name: Build Httpserver
+      - name: Build all binaries
         shell: pwsh
         run: |
-          cd app\interface\httpserver\cmd\httpserver
-          go build -o ..\..\..\..\..\bin\httpserver.exe
-          cd ..\..\..\..\..
+          $binDir = "bin"
+          New-Item -ItemType Directory -Force -Path $binDir
+          Get-ChildItem -Recurse -Filter main.go | ForEach-Object {
+            $dir = $_.DirectoryName
+            $serviceName = $dir | Split-Path -Leaf
+            $output = Join-Path (Get-Location) "$binDir\$serviceName.exe"
+            Write-Host "Building $serviceName..."
+            Push-Location $dir
+            go build -o $output
+            Pop-Location
+          }
 
-      - name: Upload binaries
+      - name: Upload all binaries
         uses: actions/upload-artifact@v4
         with:
-          name: teamgram-stable
+          name: teamgram-windows-all
           path: bin/
