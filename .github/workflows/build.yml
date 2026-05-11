@@ -1,4 +1,4 @@
-name: Build Gnetway and Session only
+name: Build Session and Httpserver (Stable)
 
 on:
   workflow_dispatch:
@@ -14,29 +14,23 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Fix gnet dependency for Windows
-        shell: pwsh
-        run: |
-          go mod edit -replace github.com/teamgram/gnet/v2=github.com/panjf2000/gnet/v2@v2.6.0
-          go mod tidy
-
-      - name: Build Gnetway
-        shell: pwsh
-        run: |
-          mkdir bin
-          cd app\interface\gnetway\cmd\gnetway
-          go build -o ..\..\..\..\..\bin\gnetway.exe
-          cd ..\..\..\..\..
-
       - name: Build Session
         shell: pwsh
         run: |
+          mkdir bin
           cd app\interface\session\cmd\session
           go build -o ..\..\..\..\..\bin\session.exe
+          cd ..\..\..\..\..
+
+      - name: Build Httpserver
+        shell: pwsh
+        run: |
+          cd app\interface\httpserver\cmd\httpserver
+          go build -o ..\..\..\..\..\bin\httpserver.exe
           cd ..\..\..\..\..
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: teamgram-gateway-only
+          name: teamgram-stable
           path: bin/
