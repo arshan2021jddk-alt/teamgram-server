@@ -1,0 +1,38 @@
+name: Build All Teamgram Binaries for Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build all binaries
+        shell: pwsh
+        run: |
+          $binDir = "bin"
+          New-Item -ItemType Directory -Force -Path $binDir
+          Get-ChildItem -Recurse -Filter main.go | ForEach-Object {
+            $mainFile = $_.FullName
+            $dir = $_.DirectoryName
+            # استخراج نام سرویس از مسیر: .../cmd/<service>/main.go
+            $serviceName = $dir | Split-Path -Leaf
+            $output = Join-Path (Get-Location) "$binDir\$serviceName.exe"
+            Write-Host "Building $serviceName..."
+            Push-Location $dir
+            go build -o $output
+            Pop-Location
+          }
+
+      - name: Upload all binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamgram-windows-all
+          path: bin/
