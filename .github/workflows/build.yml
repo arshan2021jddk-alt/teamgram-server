@@ -1,4 +1,4 @@
-name: Build All Teamgram Binaries for Windows
+name: Build Only Gateway and Session for Windows
 
 on:
   workflow_dispatch:
@@ -14,25 +14,30 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Build all binaries
+      - name: Fix gnet dependency for Windows
+        shell: pwsh
+        run: |
+          go mod edit -replace github.com/teamgram/gnet/v2=github.com/panjf2000/gnet/v2@v2.6.0
+          go mod tidy
+
+      - name: Build Gateway
         shell: pwsh
         run: |
           $binDir = "bin"
           New-Item -ItemType Directory -Force -Path $binDir
-          Get-ChildItem -Recurse -Filter main.go | ForEach-Object {
-            $mainFile = $_.FullName
-            $dir = $_.DirectoryName
-            # استخراج نام سرویس از مسیر: .../cmd/<service>/main.go
-            $serviceName = $dir | Split-Path -Leaf
-            $output = Join-Path (Get-Location) "$binDir\$serviceName.exe"
-            Write-Host "Building $serviceName..."
-            Push-Location $dir
-            go build -o $output
-            Pop-Location
-          }
+          Push-Location app/interface/gateway/cmd/gateway
+          go build -o (Join-Path (Get-Location) "..\..\..\..\..\$binDir\gateway.exe")
+          Pop-Location
 
-      - name: Upload all binaries
+      - name: Build Session
+        shell: pwsh
+        run: |
+          Push-Location app/interface/session/cmd/session
+          go build -o (Join-Path (Get-Location) "..\..\..\..\..\bin\session.exe")
+          Pop-Location
+
+      - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: teamgram-windows-all
+          name: teamgram-light-windows
           path: bin/
