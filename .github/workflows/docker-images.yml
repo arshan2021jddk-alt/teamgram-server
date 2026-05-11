@@ -1,0 +1,29 @@
+name: Pull and Save Docker Images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pull-and-save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull required images
+        run: |
+          docker pull golang:1.23.0
+          docker pull mysql:8.0
+          docker pull redis:7-alpine
+          docker pull confluentinc/cp-zookeeper:7.5.0
+          docker pull confluentinc/cp-kafka:7.5.0
+          docker pull quay.io/coreos/etcd:v3.5.9
+          docker pull minio/minio:latest
+          docker pull jrottenberg/ffmpeg:4.4-ubuntu
+
+      - name: Save images to tar.gz
+        run: |
+          docker save golang:1.23.0 mysql:8.0 redis:7-alpine confluentinc/cp-zookeeper:7.5.0 confluentinc/cp-kafka:7.5.0 quay.io/coreos/etcd:v3.5.9 minio/minio:latest jrottenberg/ffmpeg:4.4-ubuntu | gzip > teamgram-images.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamgram-images
+          path: teamgram-images.tar.gz
