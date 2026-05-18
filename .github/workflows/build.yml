@@ -1,11 +1,11 @@
-name: Build Teamgram Binaries for Windows
+name: Build Teamgram Binaries for Linux
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -14,29 +14,19 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Fix gnet dependency for Windows
-        shell: pwsh
-        run: |
-          go mod edit -replace github.com/teamgram/gnet/v2=github.com/panjf2000/gnet/v2@v2.6.0
-          go mod tidy
-
       - name: Build all binaries
-        shell: pwsh
+        shell: bash
         run: |
-          $binDir = "bin"
-          New-Item -ItemType Directory -Force -Path $binDir
-          Get-ChildItem -Recurse -Filter main.go | ForEach-Object {
-            $dir = $_.DirectoryName
-            $serviceName = $dir | Split-Path -Leaf
-            $output = Join-Path (Get-Location) "$binDir\$serviceName.exe"
-            Write-Host "Building $serviceName..."
-            Push-Location $dir
-            go build -o $output
-            Pop-Location
-          }
+          mkdir -p bin
+          find . -name main.go | while read f; do
+            dir=$(dirname "$f")
+            service=$(basename "$dir")
+            echo "Building $service..."
+            (cd "$dir" && go build -o "../../../../bin/$service")
+          done
 
       - name: Upload all binaries
         uses: actions/upload-artifact@v4
         with:
-          name: teamgram-windows-all
+          name: teamgram-linux-all
           path: bin/
