@@ -1,0 +1,30 @@
+name: Create Vendored Source Code
+
+on:
+  workflow_dispatch:
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      
+      - name: Set Go Proxy for China
+        run: go env -w GOPROXY=https://goproxy.cn,direct
+
+      - name: Download dependencies (vendor)
+        run: go mod vendor
+
+      - name: Zip the full project
+        run: zip -r teamgram-full.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamgram-full-source
+          path: teamgram-full.zip
