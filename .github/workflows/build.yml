@@ -1,32 +1,27 @@
-name: Build Teamgram Binaries for Linux
+name: Create Vendored Source Code
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-24.04
+  vendor:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.23'
 
-      - name: Build all binaries
-        shell: bash
-        run: |
-          mkdir -p bin
-          find . -name main.go | while read f; do
-            dir=$(dirname "$f")
-            service=$(basename "$dir")
-            echo "Building $service..."
-            (cd "$dir" && go build -o "../../../../bin/$service")
-          done
+      - name: Download dependencies (vendor)
+        run: go mod vendor
 
-      - name: Upload all binaries
+      - name: Zip the full project
+        run: zip -r teamgram-vendored.zip .
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: teamgram-linux-all
-          path: bin/
+          name: teamgram-vendored
+          path: teamgram-vendored.zip
