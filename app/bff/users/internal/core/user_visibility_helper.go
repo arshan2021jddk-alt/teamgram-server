@@ -7,7 +7,7 @@ func patchBotUsernameFromImmutable(dst *mtproto.User, src *mtproto.ImmutableUser
 		return
 	}
 
-	if len(src.Usernames()) > 1 {
+	if len(src.Usernames()) > 0 {
 		dst.Username = nil
 		dst.Usernames = src.Usernames()
 		return

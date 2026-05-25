@@ -74,3 +74,33 @@ func TestPatchBotUsernameFromImmutableAddsUsernamesVector(t *testing.T) {
 		t.Fatalf("expected first username to be patched, got %q", unsafeBot.GetUsernames()[0].GetUsername())
 	}
 }
+
+func TestPatchBotUsernameFromImmutableSingleUsernameVector(t *testing.T) {
+	me := mtproto.MakeTLImmutableUser(&mtproto.ImmutableUser{
+		User: mtproto.MakeTLUserData(&mtproto.UserData{Id: 1, FirstName: "me"}).To_UserData(),
+	}).To_ImmutableUser()
+
+	bot := mtproto.MakeTLImmutableUser(&mtproto.ImmutableUser{
+		User: mtproto.MakeTLUserData(&mtproto.UserData{
+			Id:       6,
+			Username: "legacy_username",
+			Usernames: []*mtproto.Username{
+				mtproto.MakeTLUsername(&mtproto.Username{Username: "single_vector_username", Active: true}).To_Username(),
+			},
+			Bot: mtproto.MakeTLBotData(&mtproto.BotData{BotInfoVersion: 1}).To_BotData(),
+		}).To_UserData(),
+	}).To_ImmutableUser()
+
+	unsafeBot := bot.ToUnsafeUser(me)
+	patchBotUsernameFromImmutable(unsafeBot, bot)
+
+	if unsafeBot.GetUsername() != nil {
+		t.Fatalf("expected username field to be nil when usernames vector exists, got %q", unsafeBot.GetUsername().GetValue())
+	}
+	if len(unsafeBot.GetUsernames()) != 1 {
+		t.Fatalf("expected 1 username entry, got %d", len(unsafeBot.GetUsernames()))
+	}
+	if unsafeBot.GetUsernames()[0].GetUsername() != "single_vector_username" {
+		t.Fatalf("expected vector username to be patched, got %q", unsafeBot.GetUsernames()[0].GetUsername())
+	}
+}
