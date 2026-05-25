@@ -44,7 +44,12 @@ func (c *ChatCore) ChatEditChatAdmin(in *chat.TLChatEditChatAdmin) (*mtproto.Mut
 	}
 
 	editAdmin, _ = chat2.GetImmutableChatParticipant(in.EditChatAdminId)
-	if editAdmin != nil && editAdmin.State != mtproto.ChatMemberStateNormal {
+	if editAdmin == nil {
+		err = mtproto.ErrUserNotParticipant
+		c.Logger.Errorf("chat.editChatAdmin - error: %v", err)
+		return nil, err
+	}
+	if editAdmin.State != mtproto.ChatMemberStateNormal {
 		err = mtproto.ErrPeerIdInvalid
 		c.Logger.Errorf("chat.editChatAdmin - error: %v", err)
 		return nil, err
@@ -82,7 +87,7 @@ func (c *ChatCore) ChatEditChatAdmin(in *chat.TLChatEditChatAdmin) (*mtproto.Mut
 					editAdmin.AdminRights = mtproto.MakeDefaultChatAdminRights()
 					editAdmin.ParticipantType = mtproto.ChatMemberAdmin
 				} else {
-					_, result.Err = c.svcCtx.Dao.ChatParticipantsDAO.UpdateParticipantType(c.ctx, mtproto.ChatMemberNormal, editAdmin.Id)
+					_, result.Err = c.svcCtx.Dao.ChatParticipantsDAO.UpdateParticipantTypeTx(tx, mtproto.ChatMemberNormal, editAdmin.Id)
 					if result.Err != nil {
 						c.Logger.Errorf("chat.editChatAdmin - error: %v", result.Err)
 						return

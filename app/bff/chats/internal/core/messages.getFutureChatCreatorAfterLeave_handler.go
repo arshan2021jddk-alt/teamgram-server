@@ -24,8 +24,12 @@ import (
 // MessagesGetFutureChatCreatorAfterLeave
 // messages.getFutureChatCreatorAfterLeave#3b7d0ea6 peer:InputPeer = User;
 func (c *ChatsCore) MessagesGetFutureChatCreatorAfterLeave(in *mtproto.TLMessagesGetFutureChatCreatorAfterLeave) (*mtproto.User, error) {
-	// TODO: not impl
-	c.Logger.Errorf("messages.getFutureChatCreatorAfterLeave blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetPeer() == nil {
+		err := mtproto.ErrPeerIdInvalid
+		c.Logger.Errorf("messages.getFutureChatCreatorAfterLeave - invalid peer: %v", err)
+		return nil, err
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	c.Logger.Errorf("messages.getFutureChatCreatorAfterLeave - error: backend flow is not implemented")
+	return nil, mtproto.ErrMethodNotImpl
 }

@@ -29,9 +29,15 @@ import (
 // MessagesEditChatTitle
 // messages.editChatTitle#73783ffd chat_id:long title:string = Updates;
 func (c *ChatsCore) MessagesEditChatTitle(in *mtproto.TLMessagesEditChatTitle) (*mtproto.Updates, error) {
+	if in.GetChatId() <= 0 {
+		err := mtproto.ErrChatIdInvalid
+		c.Logger.Errorf("messages.editChatTitle - error: %v", err)
+		return nil, err
+	}
+
 	if in.Title == "" {
 		err := mtproto.ErrChatTitleEmpty
-		c.Logger.Errorf("messages.editChatTitle - error: ", err)
+		c.Logger.Errorf("messages.editChatTitle - error: %v", err)
 		return nil, err
 	}
 
@@ -41,7 +47,7 @@ func (c *ChatsCore) MessagesEditChatTitle(in *mtproto.TLMessagesEditChatTitle) (
 		Title:      in.Title,
 	})
 	if err != nil {
-		c.Logger.Errorf("messages.editChatTitle - error: ", err)
+		c.Logger.Errorf("messages.editChatTitle - error: %v", err)
 		return nil, err
 	}
 

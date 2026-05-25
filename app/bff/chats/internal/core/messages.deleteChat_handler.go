@@ -29,6 +29,12 @@ import (
 // MessagesDeleteChat
 // messages.deleteChat#5bd0ee50 chat_id:long = Bool;
 func (c *ChatsCore) MessagesDeleteChat(in *mtproto.TLMessagesDeleteChat) (*mtproto.Bool, error) {
+	if in.GetChatId() <= 0 {
+		err := mtproto.ErrChatIdInvalid
+		c.Logger.Errorf("messages.deleteChat - error: %v", err)
+		return nil, err
+	}
+
 	operatorId := c.MD.UserId
 	if c.MD.IsAdmin {
 		operatorId = 0

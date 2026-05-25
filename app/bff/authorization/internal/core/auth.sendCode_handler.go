@@ -334,9 +334,10 @@ func (c *AuthorizationCore) authSendCode(authKeyId, sessionId int64, request *mt
 				if user.GetUser().GetUserType() == userpb.UserTypeTest {
 					needSendSms = false
 					codeData2.SentCodeType = model.SentCodeTypeApp
-					codeData2.PhoneCode = "12345"
-					codeData2.PhoneCodeExtraData = "12345"
-					c.Logger.Infof("is test server: %v", codeData2)
+					// Keep generated verification code dynamic even for test users,
+					// only skip SMS transport and deliver through app flow.
+					codeData2.PhoneCodeExtraData = codeData2.PhoneCode
+					c.Logger.Infof("test user app-code delivery enabled")
 				} else {
 					if status2, _ := c.svcCtx.StatusClient.StatusGetUserOnlineSessions(c.ctx, &statuspb.TLStatusGetUserOnlineSessions{
 						UserId: user.User.Id,

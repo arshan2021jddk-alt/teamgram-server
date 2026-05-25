@@ -24,8 +24,12 @@ import (
 // MessagesEditChatCreator
 // messages.editChatCreator#f743b857 peer:InputPeer user_id:InputUser password:InputCheckPasswordSRP = Updates;
 func (c *ChatsCore) MessagesEditChatCreator(in *mtproto.TLMessagesEditChatCreator) (*mtproto.Updates, error) {
-	// TODO: not impl
-	c.Logger.Errorf("messages.editChatCreator blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetPeer() == nil || in.GetUserId() == nil {
+		err := mtproto.ErrPeerIdInvalid
+		c.Logger.Errorf("messages.editChatCreator - invalid peer/user_id: %v", err)
+		return nil, err
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	c.Logger.Errorf("messages.editChatCreator - error: backend flow is not implemented")
+	return nil, mtproto.ErrMethodNotImpl
 }

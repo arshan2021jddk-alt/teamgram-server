@@ -25,8 +25,13 @@ import (
 // MessagesMigrateChat
 // messages.migrateChat#a2875319 chat_id:long = Updates;
 func (c *ChatsCore) MessagesMigrateChat(in *mtproto.TLMessagesMigrateChat) (*mtproto.Updates, error) {
-	// TODO: not impl
-	c.Logger.Errorf("messages.migrateChat blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetChatId() <= 0 {
+		err := mtproto.ErrChatIdInvalid
+		c.Logger.Errorf("messages.migrateChat - invalid chat_id: %v", err)
+		return nil, err
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	// TODO: wire to channel service once channel creation/migration backend is available.
+	c.Logger.Errorf("messages.migrateChat - error: backend channel migration flow is not implemented")
+	return nil, mtproto.ErrMethodNotImpl
 }

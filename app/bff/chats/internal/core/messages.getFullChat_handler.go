@@ -140,7 +140,12 @@ func (c *ChatsCore) MessagesGetFullChat(in *mtproto.TLMessagesGetFullChat) (*mtp
 		Id: idList,
 	})
 	if err != nil {
-		c.Logger.Errorf("messages.getFullChat - error: not found dialog")
+		c.Logger.Errorf("messages.getFullChat - get mutable users error: %v", err)
+		return nil, err
+	}
+	if mUsers == nil {
+		c.Logger.Errorf("messages.getFullChat - get mutable users error: nil response")
+		return nil, mtproto.ErrInternal
 	}
 	rValue.Users = mUsers.GetUserListByIdList(c.MD.UserId, idList...)
 

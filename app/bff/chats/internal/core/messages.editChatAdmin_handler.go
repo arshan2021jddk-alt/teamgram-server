@@ -28,6 +28,18 @@ import (
 // MessagesEditChatAdmin
 // messages.editChatAdmin#a85bd1c2 chat_id:long user_id:InputUser is_admin:Bool = Bool;
 func (c *ChatsCore) MessagesEditChatAdmin(in *mtproto.TLMessagesEditChatAdmin) (*mtproto.Bool, error) {
+	if in.GetChatId() <= 0 {
+		err := mtproto.ErrChatIdInvalid
+		c.Logger.Errorf("messages.editChatAdmin - invalid chat_id, err: %v", err)
+		return nil, err
+	}
+
+	if in.GetUserId() == nil {
+		err := mtproto.ErrUserIdInvalid
+		c.Logger.Errorf("messages.editChatAdmin - invalid user_id, err: %v", err)
+		return nil, err
+	}
+
 	var (
 		adminUser = mtproto.FromInputUser(c.MD.UserId, in.UserId)
 	)
@@ -47,7 +59,7 @@ func (c *ChatsCore) MessagesEditChatAdmin(in *mtproto.TLMessagesEditChatAdmin) (
 	})
 	_ = chat
 	if err != nil {
-		c.Logger.Errorf("messages.editChatAdmin - error: ", err)
+		c.Logger.Errorf("messages.editChatAdmin - error: %v", err)
 		return nil, err
 	}
 
@@ -70,7 +82,12 @@ func (c *ChatsCore) MessagesEditChatAdmin(in *mtproto.TLMessagesEditChatAdmin) (
 		Id: idList,
 	})
 	if err != nil {
-		c.Logger.Errorf("messages.getFullChat - error: not found dialog")
+		c.Logger.Errorf("messages.editChatAdmin - get mutable users error: %v", err)
+		return nil, err
+	}
+	if mUsers == nil {
+		c.Logger.Errorf("messages.editChatAdmin - get mutable users error: nil response")
+		return nil, mtproto.ErrInternal
 	}
 
 	chat.Walk(func(userId int64, participant *mtproto.ImmutableChatParticipant) error {
