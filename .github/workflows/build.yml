@@ -1,4 +1,4 @@
-name: Build and Upload
+name: Build, Inspect, and Upload Binary
 
 on:
   push:
@@ -14,10 +14,10 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -31,29 +31,36 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
-      - name: Pull image for inspection
+      - name: Pull image
         run: docker pull ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
-      - name: List files in /app
+      # این مرحله کل فایل‌های داخل /app رو با حجمشون نشون میده
+      - name: Find large executables inside container
         run: |
-          echo "=== Contents of /app ==="
-          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest ls -la /app
-          echo "=== Searching for executables ==="
-          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest find /app -type f -executable
+          echo "=== All files in /app with size > 1KB ==="
+          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest \
+            find /app -type f -size +1k -exec ls -lh {} \; 2>/dev/null || true
 
-      - name: Extract binary (adjust name if needed)
+          echo "=== Searching for files > 1MB ==="
+          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest \
+            find /app -type f -size +1M -exec ls -lh {} \; 2>/dev/null || true
+
+      # حالا فایل اجرایی که حدس می‌زنیم bing باشه رو استخراج می‌کنیم
+      # (بعد از دیدن خروجی مرحله قبل، می‌تونی این مسیر رو دقیق تنظیم کنی)
+      - name: Extract binary (adjust path after inspection)
         run: |
-          # به‌طور پیش‌فرض همون مسیر همیشگی رو تست می‌کنیم
-          # اگه توی مرحله قبل اسم دیگه‌ای دیدی، اینجا تغییرش بده
-          BINARY_PATH="/app/teamgramd"   # ← بعد از دیدن خروجی ls این رو اصلاح کن
+          # پیش‌فرض یکی از حالت‌های محتمل
+          BINARY_PATH="/app/teamgramd/gnetway"   # یا /app/gnetway یا /app/teamgramd
+          echo "Trying to extract $BINARY_PATH ..."
           docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
-          docker cp tmp-extract:${BINARY_PATH} ./teamgramd 2>/dev/null || echo "File not found, check the listing above"
+          docker cp tmp-extract:${BINARY_PATH} ./teamgramd 2>/dev/null || echo "Path not found!"
           docker rm tmp-extract
-        continue-on-error: true   # موقتاً خطا رو نادیده بگیر تا بتونی log رو ببینی
+          ls -lh ./teamgramd 2>/dev/null || true
+        continue-on-error: true
 
-      - name: Upload binary as artifact
+      - name: Upload artifact (if file exists)
         uses: actions/upload-artifact@v4
         with:
           name: teamgramd
           path: ./teamgramd
-        if: success()   # فقط اگه فایل وجود داشت آپلود کنه
+        if: hashFiles('./teamgramd') != ''
