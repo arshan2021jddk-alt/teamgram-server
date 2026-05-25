@@ -35,7 +35,7 @@ func (c *ChatsCore) MessagesEditChatDefaultBannedRights(in *mtproto.TLMessagesEd
 	)
 
 	switch peer.PeerType {
-	case mtproto.PEER_CHAT:
+	case mtproto.PEER_CHAT, mtproto.PEER_CHANNEL:
 		chat, err := c.svcCtx.Dao.ChatClient.Client().ChatEditChatDefaultBannedRights(c.ctx, &chatpb.TLChatEditChatDefaultBannedRights{
 			ChatId:       peer.PeerId,
 			OperatorId:   c.MD.UserId,
@@ -77,10 +77,6 @@ func (c *ChatsCore) MessagesEditChatDefaultBannedRights(in *mtproto.TLMessagesEd
 			Date:    int32(date),
 			Seq:     0,
 		}).To_Updates()
-	case mtproto.PEER_CHANNEL:
-		c.Logger.Errorf("messages.editChatDefaultBannedRights blocked, License key from https://teamgram.net required to unlock enterprise features.")
-
-		return nil, mtproto.ErrEnterpriseIsBlocked
 	default:
 		err := mtproto.ErrPeerIdInvalid
 		c.Logger.Errorf("invalid peer type: {%v}")

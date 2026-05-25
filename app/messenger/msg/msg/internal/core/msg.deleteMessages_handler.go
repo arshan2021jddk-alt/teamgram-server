@@ -31,10 +31,10 @@ func (c *MsgCore) MsgDeleteMessages(in *msg.TLMsgDeleteMessages) (*mtproto.Messa
 	}
 
 	switch in.PeerType {
-	case mtproto.PEER_EMPTY:
+	case mtproto.PEER_EMPTY, mtproto.PEER_SELF, mtproto.PEER_USER, mtproto.PEER_CHAT, mtproto.PEER_CHANNEL:
 		if len(in.Id) == 0 {
 			rValue = mtproto.MakeTLMessagesAffectedMessages(&mtproto.Messages_AffectedMessages{
-				Pts:      c.svcCtx.Dao.IDGenClient2.CurrentPtsId(c.ctx, in.PeerId),
+				Pts:      c.svcCtx.Dao.IDGenClient2.CurrentPtsId(c.ctx, in.UserId),
 				PtsCount: 0,
 			}).To_Messages_AffectedMessages()
 		} else {
@@ -44,10 +44,6 @@ func (c *MsgCore) MsgDeleteMessages(in *msg.TLMsgDeleteMessages) (*mtproto.Messa
 				return nil, err
 			}
 		}
-	case mtproto.PEER_CHANNEL:
-		err = mtproto.ErrPeerIdInvalid
-		c.Logger.Errorf("DeleteMessages - error: %v", err)
-		return nil, err
 	default:
 		err = mtproto.ErrPeerIdInvalid
 		c.Logger.Errorf("DeleteMessages - error: %v", err)

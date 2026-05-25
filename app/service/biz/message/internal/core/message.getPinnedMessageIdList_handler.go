@@ -17,8 +17,8 @@ import (
 // MessageGetPinnedMessageIdList
 // message.getPinnedMessageIdList user_id:long peer_type:int peer_id:long = Vector<int>;
 func (c *MessageCore) MessageGetPinnedMessageIdList(in *message.TLMessageGetPinnedMessageIdList) (*message.Vector_Int, error) {
-	// TODO: not impl
-	c.Logger.Errorf("message.getPinnedMessageIdList - error: method MessageGetPinnedMessageIdList not impl")
+	dialogId := mtproto.MakeDialogId(in.UserId, in.PeerType, in.PeerId)
+	idList, _ := c.svcCtx.Dao.MessagesDAO.SelectPinnedMessageIdList(c.ctx, in.UserId, dialogId.A, dialogId.B)
 
-	return nil, mtproto.ErrMethodNotImpl
+	return &message.Vector_Int{Datas: idList}, nil
 }

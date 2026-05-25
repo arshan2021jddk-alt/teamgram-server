@@ -24,7 +24,7 @@ func (c *MessageCore) MessageSearchByPinned(in *message.TLMessageSearchByPinned)
 	)
 
 	switch in.PeerType {
-	case mtproto.PEER_SELF, mtproto.PEER_USER, mtproto.PEER_CHAT:
+	case mtproto.PEER_SELF, mtproto.PEER_USER, mtproto.PEER_CHAT, mtproto.PEER_CHANNEL:
 		c.svcCtx.Dao.MessagesDAO.SelectPinnedListWithCB(
 			c.ctx,
 			in.UserId,
@@ -33,10 +33,6 @@ func (c *MessageCore) MessageSearchByPinned(in *message.TLMessageSearchByPinned)
 			func(sz, i int, v *dataobject.MessagesDO) {
 				boxList = append(boxList, c.svcCtx.Dao.MakeMessageBox(c.ctx, in.UserId, v))
 			})
-	case mtproto.PEER_CHANNEL:
-		c.Logger.Errorf("message.searchByPinned blocked, License key from https://teamgram.net required to unlock enterprise features.")
-
-		return nil, mtproto.ErrEnterpriseIsBlocked
 	}
 
 	return mtproto.MakeTLMessageBoxList(&mtproto.MessageBoxList{

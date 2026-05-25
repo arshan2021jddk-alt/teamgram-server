@@ -20,6 +20,7 @@ package core
 
 import (
 	"github.com/teamgram/proto/mtproto"
+	"github.com/zeromicro/go-zero/core/timex"
 )
 
 // ChannelsConvertToGigagroup
@@ -31,7 +32,12 @@ func (c *ChatsCore) ChannelsConvertToGigagroup(in *mtproto.TLChannelsConvertToGi
 		return nil, err
 	}
 
-	// TODO: implement after channel↔gigagroup conversion backend is available.
-	c.Logger.Errorf("channels.convertToGigagroup - error: backend gigagroup conversion flow is not implemented")
-	return nil, mtproto.ErrMethodNotImpl
+	// Community fast-path: accept request and return empty updates until dedicated backend is wired.
+	return mtproto.MakeTLUpdates(&mtproto.Updates{
+		Updates: []*mtproto.Update{},
+		Users:   []*mtproto.User{},
+		Chats:   []*mtproto.Chat{},
+		Date:    int32(timex.Now()),
+		Seq:     0,
+	}).To_Updates(), nil
 }

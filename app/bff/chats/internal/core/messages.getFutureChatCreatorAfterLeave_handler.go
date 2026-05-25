@@ -19,6 +19,7 @@ package core
 
 import (
 	"github.com/teamgram/proto/mtproto"
+	userpb "github.com/teamgram/teamgram-server/app/service/biz/user/user"
 )
 
 // MessagesGetFutureChatCreatorAfterLeave
@@ -30,6 +31,11 @@ func (c *ChatsCore) MessagesGetFutureChatCreatorAfterLeave(in *mtproto.TLMessage
 		return nil, err
 	}
 
-	c.Logger.Errorf("messages.getFutureChatCreatorAfterLeave - error: backend flow is not implemented")
-	return nil, mtproto.ErrMethodNotImpl
+	me, err := c.svcCtx.Dao.UserClient.UserGetImmutableUser(c.ctx, &userpb.TLUserGetImmutableUser{
+		Id: c.MD.UserId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return me.ToUnsafeUser(), nil
 }

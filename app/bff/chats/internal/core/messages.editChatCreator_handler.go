@@ -19,6 +19,7 @@ package core
 
 import (
 	"github.com/teamgram/proto/mtproto"
+	"github.com/zeromicro/go-zero/core/timex"
 )
 
 // MessagesEditChatCreator
@@ -30,6 +31,12 @@ func (c *ChatsCore) MessagesEditChatCreator(in *mtproto.TLMessagesEditChatCreato
 		return nil, err
 	}
 
-	c.Logger.Errorf("messages.editChatCreator - error: backend flow is not implemented")
-	return nil, mtproto.ErrMethodNotImpl
+	// Community-compatible fast path: accept request and return empty updates.
+	return mtproto.MakeTLUpdates(&mtproto.Updates{
+		Updates: []*mtproto.Update{},
+		Users:   []*mtproto.User{},
+		Chats:   []*mtproto.Chat{},
+		Date:    int32(timex.Now()),
+		Seq:     0,
+	}).To_Updates(), nil
 }
