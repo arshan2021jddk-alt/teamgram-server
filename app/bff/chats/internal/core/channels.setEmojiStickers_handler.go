@@ -25,8 +25,12 @@ import (
 // ChannelsSetEmojiStickers
 // channels.setEmojiStickers#3cd930b7 channel:InputChannel stickerset:InputStickerSet = Bool;
 func (c *ChatsCore) ChannelsSetEmojiStickers(in *mtproto.TLChannelsSetEmojiStickers) (*mtproto.Bool, error) {
-	// TODO: not impl
-	c.Logger.Errorf("channels.setEmojiStickers blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetChannel() == nil {
+		err := mtproto.ErrChannelInvalid
+		c.Logger.Errorf("channels.setEmojiStickers - invalid channel: %v", err)
+		return nil, err
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	c.Logger.Errorf("channels.setEmojiStickers - error: backend flow is not implemented")
+	return nil, mtproto.ErrMethodNotImpl
 }

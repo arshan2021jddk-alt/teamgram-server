@@ -19,6 +19,9 @@ type mockKVStore struct {
 	evalCtxFn    func(ctx context.Context, script, key string, args ...any) (any, error)
 	hdelCtxFn    func(ctx context.Context, key, field string) (bool, error)
 	hgetallCtxFn func(ctx context.Context, key string) (map[string]string, error)
+	hsetCtxFn    func(ctx context.Context, key, field string, value any) (bool, error)
+	expireCtxFn  func(ctx context.Context, key string, seconds int) (bool, error)
+	delCtxFn     func(ctx context.Context, keys ...string) (int64, error)
 }
 
 func (m *mockKVStore) EvalCtx(ctx context.Context, script, key string, args ...any) (any, error) {
@@ -31,6 +34,18 @@ func (m *mockKVStore) HdelCtx(ctx context.Context, key, field string) (bool, err
 
 func (m *mockKVStore) HgetallCtx(ctx context.Context, key string) (map[string]string, error) {
 	return m.hgetallCtxFn(ctx, key)
+}
+
+func (m *mockKVStore) HsetCtx(ctx context.Context, key, field string, value any) (bool, error) {
+	return m.hsetCtxFn(ctx, key, field, value)
+}
+
+func (m *mockKVStore) ExpireCtx(ctx context.Context, key string, seconds int) (bool, error) {
+	return m.expireCtxFn(ctx, key, seconds)
+}
+
+func (m *mockKVStore) DelCtx(ctx context.Context, keys ...string) (int64, error) {
+	return m.delCtxFn(ctx, keys...)
 }
 
 func newTestCore(store kv.Store, expire int) *StatusCore {
@@ -275,5 +290,66 @@ func TestStatusGetUsersOnlineSessionsList_TooManyUsers(t *testing.T) {
 	_, err := c.StatusGetUsersOnlineSessionsList(in)
 	if err == nil {
 		t.Fatal("expected error for too many users")
+	}
+}
+
+func TestStatusGetChannelOnlineUsers_InvalidChannelId(t *testing.T) {
+	c := newTestCore(&mockKVStore{}, 300)
+	_, err := c.StatusGetChannelOnlineUsers(&status.TLStatusGetChannelOnlineUsers{ChannelId: 0})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestStatusSetUserChannelsOnline_Success(t *testing.T) {
+	store := &mockKVStore{
+		hsetCtxFn:   func(ctx context.Context, key, field string, value any) (bool, error) { return true, nil },
+		expireCtxFn: func(ctx context.Context, key string, seconds int) (bool, error) { return true, nil },
+	}
+	c := newTestCore(store, 300)
+	_, err := c.StatusSetUserChannelsOnline(&status.TLStatusSetUserChannelsOnline{UserId: 10, Channels: []int64{100, 101}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestStatusSetChannelOffline_DelError(t *testing.T) {
+	delErr := errors.New("del failed")
+	store := &mockKVStore{
+		hgetallCtxFn: func(ctx context.Context, key string) (map[string]string, error) {
+			return map[string]string{"10": "1"}, nil
+		},
+		hdelCtxFn: func(ctx context.Context, key, field string) (bool, error) { return true, nil },
+		delCtxFn:  func(ctx context.Context, keys ...string) (int64, error) { return 0, delErr },
+	}
+	c := newTestCore(store, 300)
+	_, err := c.StatusSetChannelOffline(&status.TLStatusSetChannelOffline{ChannelId: 99})
+	if !errors.Is(err, delErr) {
+		t.Fatalf("expected delErr, got %v", err)
+	}
+}
+
+func TestStatusGetChannelOnlineUsers_SortedAndFiltered(t *testing.T) {
+	store := &mockKVStore{
+		hgetallCtxFn: func(ctx context.Context, key string) (map[string]string, error) {
+			return map[string]string{
+				"3":  "1",
+				"1":  "1",
+				"x":  "1",
+				"-2": "1",
+			}, nil
+		},
+	}
+	c := newTestCore(store, 300)
+
+	r, err := c.StatusGetChannelOnlineUsers(&status.TLStatusGetChannelOnlineUsers{ChannelId: 77})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(r.GetDatas()) != 2 {
+		t.Fatalf("expected 2 user ids, got %d", len(r.GetDatas()))
+	}
+	if r.GetDatas()[0] != 1 || r.GetDatas()[1] != 3 {
+		t.Fatalf("expected sorted [1,3], got %v", r.GetDatas())
 	}
 }

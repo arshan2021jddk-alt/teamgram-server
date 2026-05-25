@@ -25,8 +25,13 @@ import (
 // ChannelsConvertToGigagroup
 // channels.convertToGigagroup#b290c69 channel:InputChannel = Updates;
 func (c *ChatsCore) ChannelsConvertToGigagroup(in *mtproto.TLChannelsConvertToGigagroup) (*mtproto.Updates, error) {
-	// TODO: not impl
-	c.Logger.Errorf("channels.convertToGigagroup blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetChannel() == nil || in.GetChannel().GetChannelId() == 0 {
+		err := mtproto.ErrChannelInvalid
+		c.Logger.Errorf("channels.convertToGigagroup - invalid channel: %v", err)
+		return nil, err
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	// TODO: implement after channel↔gigagroup conversion backend is available.
+	c.Logger.Errorf("channels.convertToGigagroup - error: backend gigagroup conversion flow is not implemented")
+	return nil, mtproto.ErrMethodNotImpl
 }

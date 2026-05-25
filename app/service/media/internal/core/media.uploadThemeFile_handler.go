@@ -11,14 +11,34 @@ package core
 
 import (
 	"github.com/teamgram/proto/mtproto"
+	"github.com/teamgram/teamgram-server/app/service/dfs/dfs"
 	"github.com/teamgram/teamgram-server/app/service/media/media"
 )
 
 // MediaUploadThemeFile
 // media.uploadThemeFile flags:# owner_id:long file:InputFile thumb:flags.0?InputFile mime_type:string file_name:string = Document;
 func (c *MediaCore) MediaUploadThemeFile(in *media.TLMediaUploadThemeFile) (*mtproto.Document, error) {
-	// TODO: not impl
-	c.Logger.Errorf("media.uploadThemeFile blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetFile() == nil {
+		return nil, mtproto.ErrMediaInvalid
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	document, err := c.svcCtx.Dao.DfsClient.DfsUploadThemeFile(c.ctx, &dfs.TLDfsUploadThemeFile{
+		Creator:  in.GetOwnerId(),
+		File:     in.GetFile(),
+		Thumb:    in.GetThumb(),
+		MimeType: in.GetMimeType(),
+		FileName: in.GetFileName(),
+	})
+	if err != nil {
+		c.Logger.Errorf("media.uploadThemeFile - error: %v", err)
+		return nil, err
+	}
+	if len(document.GetThumbs()) > 0 {
+		if err = c.svcCtx.Dao.SavePhotoSizeV2(c.ctx, document.GetId(), document.GetThumbs()); err != nil {
+			c.Logger.Errorf("media.uploadThemeFile - save thumbs error: %v", err)
+			return nil, err
+		}
+	}
+	c.svcCtx.Dao.SaveDocumentV2(c.ctx, in.GetFileName(), document)
+	return document, nil
 }

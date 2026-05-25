@@ -11,14 +11,45 @@ package core
 
 import (
 	"github.com/teamgram/proto/mtproto"
+	"github.com/teamgram/teamgram-server/app/service/dfs/dfs"
 	"github.com/teamgram/teamgram-server/app/service/media/media"
 )
 
 // MediaUploadStickerFile
 // media.uploadStickerFile flags:# owner_id:long file:InputFile thumb:flags.0?InputFile mime_type:string file_name:string document_attribute_sticker:DocumentAttribute = Document;
 func (c *MediaCore) MediaUploadStickerFile(in *media.TLMediaUploadStickerFile) (*mtproto.Document, error) {
-	// TODO: not impl
-	c.Logger.Errorf("media.uploadStickerFile blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetFile() == nil {
+		return nil, mtproto.ErrMediaInvalid
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	attrs := make([]*mtproto.DocumentAttribute, 0, 1)
+	if in.GetDocumentAttributeSticker() != nil {
+		attrs = append(attrs, in.GetDocumentAttributeSticker())
+	}
+
+	inputMedia := mtproto.MakeTLInputMediaUploadedDocument(&mtproto.InputMedia{
+		File:       in.GetFile(),
+		Thumb:      in.GetThumb(),
+		MimeType:   in.GetMimeType(),
+		Attributes: attrs,
+	}).To_InputMedia()
+
+	document, err := c.svcCtx.Dao.DfsClient.DfsUploadDocumentFileV2(c.ctx, &dfs.TLDfsUploadDocumentFileV2{
+		Creator: in.GetOwnerId(),
+		Media:   inputMedia,
+	})
+	if err != nil {
+		c.Logger.Errorf("media.uploadStickerFile - error: %v", err)
+		return nil, err
+	}
+
+	if len(document.GetThumbs()) > 0 {
+		if err = c.svcCtx.Dao.SavePhotoSizeV2(c.ctx, document.GetId(), document.GetThumbs()); err != nil {
+			c.Logger.Errorf("media.uploadStickerFile - save thumbs error: %v", err)
+			return nil, err
+		}
+	}
+	c.svcCtx.Dao.SaveDocumentV2(c.ctx, in.GetFileName(), document)
+
+	return document, nil
 }

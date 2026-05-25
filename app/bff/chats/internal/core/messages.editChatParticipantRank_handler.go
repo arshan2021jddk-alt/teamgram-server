@@ -24,8 +24,12 @@ import (
 // MessagesEditChatParticipantRank
 // messages.editChatParticipantRank#a00f32b0 peer:InputPeer participant:InputPeer rank:string = Updates;
 func (c *ChatsCore) MessagesEditChatParticipantRank(in *mtproto.TLMessagesEditChatParticipantRank) (*mtproto.Updates, error) {
-	// TODO: not impl
-	c.Logger.Errorf("messages.editChatParticipantRank blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetPeer() == nil || in.GetParticipant() == nil {
+		err := mtproto.ErrPeerIdInvalid
+		c.Logger.Errorf("messages.editChatParticipantRank - invalid peer/participant: %v", err)
+		return nil, err
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	c.Logger.Errorf("messages.editChatParticipantRank - error: backend flow is not implemented")
+	return nil, mtproto.ErrMethodNotImpl
 }

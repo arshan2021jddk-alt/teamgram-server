@@ -30,11 +30,22 @@ import (
 // MessagesDeleteChatUser
 // messages.deleteChatUser#a2185cab flags:# revoke_history:flags.0?true chat_id:long user_id:InputUser = Updates;
 func (c *ChatsCore) MessagesDeleteChatUser(in *mtproto.TLMessagesDeleteChatUser) (*mtproto.Updates, error) {
+	if in.GetChatId() <= 0 {
+		err := mtproto.ErrChatIdInvalid
+		c.Logger.Errorf("messages.deleteChatUser - error: %v", err)
+		return nil, err
+	}
+	if in.GetUserId() == nil {
+		err := mtproto.ErrUserIdInvalid
+		c.Logger.Errorf("messages.deleteChatUser - error: %v", err)
+		return nil, err
+	}
+
 	deleteUser := mtproto.FromInputUser(c.MD.UserId, in.UserId)
 
 	if !deleteUser.IsUser() || deleteUser.PeerId == 0 {
 		err := mtproto.ErrPeerIdInvalid
-		c.Logger.Errorf("messages.deleteChatUser - invalid peer", err)
+		c.Logger.Errorf("messages.deleteChatUser - invalid peer: %v", err)
 		return nil, err
 	}
 
