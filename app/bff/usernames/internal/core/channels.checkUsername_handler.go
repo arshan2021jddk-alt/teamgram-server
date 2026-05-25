@@ -19,14 +19,35 @@
 package core
 
 import (
+	"github.com/teamgram/marmota/pkg/strings2"
+	"github.com/teamgram/marmota/pkg/utils"
 	"github.com/teamgram/proto/mtproto"
+	userpb "github.com/teamgram/teamgram-server/app/service/biz/user/user"
 )
 
 // ChannelsCheckUsername
 // channels.checkUsername#10e6bd2c channel:InputChannel username:string = Bool;
 func (c *UsernamesCore) ChannelsCheckUsername(in *mtproto.TLChannelsCheckUsername) (*mtproto.Bool, error) {
-	// TODO: not impl
-	c.Logger.Errorf("channels.checkUsername blocked, License key from https://teamgram.net required to unlock enterprise features.")
+	if in.GetChannel() == nil || in.GetChannel().GetChannelId() == 0 {
+		return nil, mtproto.ErrChannelInvalid
+	}
 
-	return nil, mtproto.ErrEnterpriseIsBlocked
+	username := in.GetUsername()
+	if len(username) < userpb.MinUsernameLen ||
+		!strings2.IsAlNumString(username) ||
+		utils.IsNumber(username[0]) {
+		return nil, mtproto.ErrUsernameInvalid
+	}
+
+	existed, err := c.svcCtx.Dao.UserClient.UserCheckChannelUsername(c.ctx, &userpb.TLUserCheckChannelUsername{
+		ChannelId: in.GetChannel().GetChannelId(),
+		Username:  username,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if existed.GetPredicateName() == userpb.Predicate_usernameExistedNotMe {
+		return mtproto.BoolFalse, nil
+	}
+	return mtproto.BoolTrue, nil
 }

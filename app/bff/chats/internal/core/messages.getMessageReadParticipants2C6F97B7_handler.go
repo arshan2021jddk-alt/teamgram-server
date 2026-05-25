@@ -34,7 +34,7 @@ func (c *ChatsCore) MessagesGetMessageReadParticipants2C6F97B7(in *mtproto.TLMes
 	)
 
 	switch peer.PeerType {
-	case mtproto.PEER_CHAT:
+	case mtproto.PEER_CHAT, mtproto.PEER_CHANNEL:
 		msgBox, err := c.svcCtx.Dao.MessageClient.MessageGetUserMessage(c.ctx, &message.TLMessageGetUserMessage{
 			UserId: c.MD.UserId,
 			Id:     in.MsgId,
@@ -78,10 +78,6 @@ func (c *ChatsCore) MessagesGetMessageReadParticipants2C6F97B7(in *mtproto.TLMes
 				}
 			}
 		})
-	case mtproto.PEER_CHANNEL:
-		c.Logger.Errorf("messages.getMessageReadParticipants blocked, License key from https://teamgram.net required to unlock enterprise features.")
-
-		return nil, mtproto.ErrEnterpriseIsBlocked
 	default:
 		err := mtproto.ErrPeerIdInvalid
 		c.Logger.Errorf("messages.getMessageReadParticipants - error: %v", err)

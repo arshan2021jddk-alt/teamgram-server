@@ -36,7 +36,7 @@ func (c *MessageCore) MessageSearch(in *message.TLMessageSearch) (*mtproto.Messa
 	}
 
 	switch in.PeerType {
-	case mtproto.PEER_SELF, mtproto.PEER_USER, mtproto.PEER_CHAT:
+	case mtproto.PEER_SELF, mtproto.PEER_USER, mtproto.PEER_CHAT, mtproto.PEER_CHANNEL:
 		if q[0] == '#' {
 			idList, _ := c.svcCtx.Dao.HashTagsDAO.SelectPeerHashTagList(
 				c.ctx,
@@ -68,10 +68,6 @@ func (c *MessageCore) MessageSearch(in *message.TLMessageSearch) (*mtproto.Messa
 					boxList = append(boxList, c.svcCtx.Dao.MakeMessageBox(c.ctx, in.UserId, v))
 				})
 		}
-	case mtproto.PEER_CHANNEL:
-		c.Logger.Errorf("message.search blocked, License key from https://teamgram.net required to unlock enterprise features.")
-
-		return nil, mtproto.ErrEnterpriseIsBlocked
 	}
 
 	if boxList == nil {
