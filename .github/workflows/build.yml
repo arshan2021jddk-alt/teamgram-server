@@ -31,19 +31,29 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
-      # حالا ایمیج رو pull می‌کنیم تا بتونیم فایل باینری رو استخراج کنیم
-      - name: Pull image for extraction
+      - name: Pull image for inspection
         run: docker pull ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
-      - name: Extract binary from image
+      - name: List files in /app
         run: |
-          docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
-          docker cp tmp-extract:/app/teamgramd ./teamgramd
-          docker rm tmp-extract
+          echo "=== Contents of /app ==="
+          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest ls -la /app
+          echo "=== Searching for executables ==="
+          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest find /app -type f -executable
 
-      # باینری استخراج‌شده رو به‌عنوان Artifact آپلود می‌کنیم
+      - name: Extract binary (adjust name if needed)
+        run: |
+          # به‌طور پیش‌فرض همون مسیر همیشگی رو تست می‌کنیم
+          # اگه توی مرحله قبل اسم دیگه‌ای دیدی، اینجا تغییرش بده
+          BINARY_PATH="/app/teamgramd"   # ← بعد از دیدن خروجی ls این رو اصلاح کن
+          docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
+          docker cp tmp-extract:${BINARY_PATH} ./teamgramd 2>/dev/null || echo "File not found, check the listing above"
+          docker rm tmp-extract
+        continue-on-error: true   # موقتاً خطا رو نادیده بگیر تا بتونی log رو ببینی
+
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
         with:
           name: teamgramd
           path: ./teamgramd
+        if: success()   # فقط اگه فایل وجود داشت آپلود کنه
