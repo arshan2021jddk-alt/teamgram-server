@@ -1,0 +1,15 @@
+port: 7880
+bind_addresses:
+  - "0.0.0.0"
+rtc:
+  udp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+redis:
+  address: livekit-redis:6379
+keys:
+  LK_TEAMGRAM_DEV: LK_TEAMGRAM_DEV_SECRET_REPLACE_ME
+# production notes:
+# - replace key/secret
+# - run behind TLS reverse proxy for wss
+# - keep API secret only inside signaling service env
