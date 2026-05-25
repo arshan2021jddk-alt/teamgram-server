@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Build and Upload
 
 on:
   push:
@@ -24,9 +24,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/teamgram:latest
+
+      # حالا ایمیج رو pull می‌کنیم تا بتونیم فایل باینری رو استخراج کنیم
+      - name: Pull image for extraction
+        run: docker pull ghcr.io/${{ github.repository_owner }}/teamgram:latest
+
+      - name: Extract binary from image
+        run: |
+          docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
+          docker cp tmp-extract:/app/teamgramd ./teamgramd
+          docker rm tmp-extract
+
+      # باینری استخراج‌شده رو به‌عنوان Artifact آپلود می‌کنیم
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamgramd
+          path: ./teamgramd
