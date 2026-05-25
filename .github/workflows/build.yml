@@ -1,27 +1,32 @@
-name: Create Vendored Source Code
+name: Build Docker Image
 
 on:
+  push:
+    branches:
+      - 'codex/add-group-voice-call-feature'
   workflow_dispatch:
 
 jobs:
-  vendor:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          go-version: '1.23'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download dependencies (vendor)
-        run: go mod vendor
-
-      - name: Zip the full project
-        run: zip -r teamgram-vendored.zip .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Build and Push
+        uses: docker/build-push-action@v5
         with:
-          name: teamgram-vendored
-          path: teamgram-vendored.zip
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/teamgram:latest
