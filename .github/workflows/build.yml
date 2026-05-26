@@ -1,7 +1,7 @@
-name: Extract gnetway binary
+name: Extract Only gnetway
 
 on:
-  workflow_dispatch:   # فقط دستی اجرا میشه، بی دردسر
+  workflow_dispatch:
   push:
     branches:
       - 'codex/add-group-voice-call-feature'
@@ -20,17 +20,25 @@ jobs:
       - name: Pull image
         run: docker pull ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
-      - name: Extract gnetway binary
+      - name: Inspect and extract
         run: |
-          echo "Creating temporary container..."
-          docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
-          echo "Copying /app/bin/gnetway ..."
-          docker cp tmp-extract:/app/bin/gnetway ./gnetway  # اسم خروجی gnetway
-          docker rm tmp-extract
-          echo "Done. File size:"
-          ls -lh ./gnetway
+          echo "=== Checking /app/bin ==="
+          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest ls -lh /app/bin/gnetway || echo "gnetway NOT FOUND"
 
-      - name: Upload binary
+          echo "=== Extracting gnetway ==="
+          docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
+          docker cp tmp-extract:/app/bin/gnetway ./gnetway
+          docker rm tmp-extract
+
+          if [ -f ./gnetway ]; then
+            echo "Extraction successful. File size:"
+            ls -lh ./gnetway
+          else
+            echo "ERROR: gnetway was not extracted!"
+            exit 1
+          fi
+
+      - name: Upload gnetway
         uses: actions/upload-artifact@v4
         with:
           name: gnetway
