@@ -1,48 +1,37 @@
-name: Build and Upload
+name: Extract gnetway binary
 
 on:
+  workflow_dispatch:   # فقط دستی اجرا میشه، بی دردسر
   push:
     branches:
       - 'codex/add-group-voice-call-feature'
-  workflow_dispatch:
 
 jobs:
-  build:
+  extract:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/teamgram:latest
-
-      - name: Pull image for extraction
+      - name: Pull image
         run: docker pull ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
       - name: Extract gnetway binary
         run: |
+          echo "Creating temporary container..."
           docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
-          docker cp tmp-extract:/app/bin/gnetway ./teamgramd
+          echo "Copying /app/bin/gnetway ..."
+          docker cp tmp-extract:/app/bin/gnetway ./gnetway  # اسم خروجی gnetway
           docker rm tmp-extract
-          ls -lh ./teamgramd
+          echo "Done. File size:"
+          ls -lh ./gnetway
 
-      - name: Upload binary as artifact
+      - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: teamgramd
-          path: ./teamgramd
+          name: gnetway
+          path: ./gnetway
