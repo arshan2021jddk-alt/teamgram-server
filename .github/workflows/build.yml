@@ -1,4 +1,4 @@
-name: Build, Inspect, and Upload Binary
+name: Build and Upload
 
 on:
   push:
@@ -14,10 +14,10 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -31,36 +31,20 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
-      - name: Pull image
+      - name: Pull image for extraction
         run: docker pull ghcr.io/${{ github.repository_owner }}/teamgram:latest
 
-      # این مرحله کل فایل‌های داخل /app رو با حجمشون نشون میده
-      - name: Find large executables inside container
+      - name: Extract binary (correct path)
         run: |
-          echo "=== All files in /app with size > 1KB ==="
-          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest \
-            find /app -type f -size +1k -exec ls -lh {} \; 2>/dev/null || true
-
-          echo "=== Searching for files > 1MB ==="
-          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest \
-            find /app -type f -size +1M -exec ls -lh {} \; 2>/dev/null || true
-
-      # حالا فایل اجرایی که حدس می‌زنیم bing باشه رو استخراج می‌کنیم
-      # (بعد از دیدن خروجی مرحله قبل، می‌تونی این مسیر رو دقیق تنظیم کنی)
-      - name: Extract binary (adjust path after inspection)
-        run: |
-          # پیش‌فرض یکی از حالت‌های محتمل
-          BINARY_PATH="/app/teamgramd/gnetway"   # یا /app/gnetway یا /app/teamgramd
-          echo "Trying to extract $BINARY_PATH ..."
+          BINARY_PATH="/app/bin/gnetway"
+          echo "Extracting ${BINARY_PATH} ..."
           docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
-          docker cp tmp-extract:${BINARY_PATH} ./teamgramd 2>/dev/null || echo "Path not found!"
+          docker cp tmp-extract:${BINARY_PATH} ./teamgramd
           docker rm tmp-extract
-          ls -lh ./teamgramd 2>/dev/null || true
-        continue-on-error: true
+          ls -lh ./teamgramd
 
-      - name: Upload artifact (if file exists)
+      - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
         with:
           name: teamgramd
           path: ./teamgramd
-        if: hashFiles('./teamgramd') != ''
