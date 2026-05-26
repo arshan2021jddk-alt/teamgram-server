@@ -37,5 +37,5 @@ func (c *ChatsCore) MessagesGetFutureChatCreatorAfterLeave(in *mtproto.TLMessage
 	if err != nil {
 		return nil, err
 	}
-	return me.ToUnsafeUser(), nil
+	return me.ToUnsafeUser(me), nil
 }

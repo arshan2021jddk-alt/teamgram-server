@@ -43,7 +43,7 @@ func (c *UsernamesCore) ChannelsUpdateUsername(in *mtproto.TLChannelsUpdateUsern
 		return nil, err
 	}
 
-	oldUsername := chat.Username
+	oldUsername := chat.GetUsername()
 	if oldUsername == newUsername {
 		return mtproto.BoolTrue, nil
 	}

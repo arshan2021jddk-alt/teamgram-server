@@ -84,21 +84,21 @@ func (c *StatusCore) StatusSetUserChannelsOnline(in *status.TLStatusSetUserChann
 	userChannelsKey := getUserChannelsKey(in.GetUserId())
 	for _, ch := range uniquePositiveInt64(in.GetChannels()) {
 		chKey := getChannelUsersKey(ch)
-		_, err := c.svcCtx.Dao.KV.HsetCtx(c.ctx, chKey, uid, "1")
+		err := c.svcCtx.Dao.KV.HsetCtx(c.ctx, chKey, uid, "1")
 		if err != nil {
 			return nil, err
 		}
-		_, err = c.svcCtx.Dao.KV.ExpireCtx(c.ctx, chKey, c.svcCtx.Config.StatusExpire)
+		err = c.svcCtx.Dao.KV.ExpireCtx(c.ctx, chKey, c.svcCtx.Config.StatusExpire)
 		if err != nil {
 			return nil, err
 		}
-		_, err = c.svcCtx.Dao.KV.HsetCtx(c.ctx, userChannelsKey, strconv.FormatInt(ch, 10), "1")
+		err = c.svcCtx.Dao.KV.HsetCtx(c.ctx, userChannelsKey, strconv.FormatInt(ch, 10), "1")
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	_, err := c.svcCtx.Dao.KV.ExpireCtx(c.ctx, userChannelsKey, c.svcCtx.Config.StatusExpire)
+	err := c.svcCtx.Dao.KV.ExpireCtx(c.ctx, userChannelsKey, c.svcCtx.Config.StatusExpire)
 	if err != nil {
 		return nil, err
 	}
@@ -114,11 +114,11 @@ func (c *StatusCore) StatusSetUserChannelsOffline(in *status.TLStatusSetUserChan
 	uid := strconv.FormatInt(in.GetUserId(), 10)
 	userChannelsKey := getUserChannelsKey(in.GetUserId())
 	for _, ch := range uniquePositiveInt64(in.GetChannels()) {
-		_, err := c.svcCtx.Dao.KV.HdelCtx(c.ctx, getChannelUsersKey(ch), uid)
+		err := c.svcCtx.Dao.KV.HdelCtx(c.ctx, getChannelUsersKey(ch), uid)
 		if err != nil {
 			return nil, err
 		}
-		_, err = c.svcCtx.Dao.KV.HdelCtx(c.ctx, userChannelsKey, strconv.FormatInt(ch, 10))
+		err = c.svcCtx.Dao.KV.HdelCtx(c.ctx, userChannelsKey, strconv.FormatInt(ch, 10))
 		if err != nil {
 			return nil, err
 		}
@@ -133,11 +133,11 @@ func (c *StatusCore) StatusSetChannelUserOffline(in *status.TLStatusSetChannelUs
 		return nil, fmt.Errorf("status.setChannelUserOffline - invalid params: channelId=%d userId=%d", in.GetChannelId(), in.GetUserId())
 	}
 
-	_, err := c.svcCtx.Dao.KV.HdelCtx(c.ctx, getChannelUsersKey(in.GetChannelId()), strconv.FormatInt(in.GetUserId(), 10))
+	err := c.svcCtx.Dao.KV.HdelCtx(c.ctx, getChannelUsersKey(in.GetChannelId()), strconv.FormatInt(in.GetUserId(), 10))
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.svcCtx.Dao.KV.HdelCtx(c.ctx, getUserChannelsKey(in.GetUserId()), strconv.FormatInt(in.GetChannelId(), 10))
+	err = c.svcCtx.Dao.KV.HdelCtx(c.ctx, getUserChannelsKey(in.GetUserId()), strconv.FormatInt(in.GetChannelId(), 10))
 	if err != nil {
 		return nil, err
 	}
@@ -151,20 +151,20 @@ func (c *StatusCore) StatusSetChannelUsersOnline(in *status.TLStatusSetChannelUs
 	}
 
 	for _, uid := range uniquePositiveInt64(in.GetId()) {
-		_, err := c.svcCtx.Dao.KV.HsetCtx(c.ctx, getChannelUsersKey(in.GetChannelId()), strconv.FormatInt(uid, 10), "1")
+		err := c.svcCtx.Dao.KV.HsetCtx(c.ctx, getChannelUsersKey(in.GetChannelId()), strconv.FormatInt(uid, 10), "1")
 		if err != nil {
 			return nil, err
 		}
-		_, err = c.svcCtx.Dao.KV.HsetCtx(c.ctx, getUserChannelsKey(uid), strconv.FormatInt(in.GetChannelId(), 10), "1")
+		err = c.svcCtx.Dao.KV.HsetCtx(c.ctx, getUserChannelsKey(uid), strconv.FormatInt(in.GetChannelId(), 10), "1")
 		if err != nil {
 			return nil, err
 		}
-		_, err = c.svcCtx.Dao.KV.ExpireCtx(c.ctx, getUserChannelsKey(uid), c.svcCtx.Config.StatusExpire)
+		err = c.svcCtx.Dao.KV.ExpireCtx(c.ctx, getUserChannelsKey(uid), c.svcCtx.Config.StatusExpire)
 		if err != nil {
 			return nil, err
 		}
 	}
-	_, err := c.svcCtx.Dao.KV.ExpireCtx(c.ctx, getChannelUsersKey(in.GetChannelId()), c.svcCtx.Config.StatusExpire)
+	err := c.svcCtx.Dao.KV.ExpireCtx(c.ctx, getChannelUsersKey(in.GetChannelId()), c.svcCtx.Config.StatusExpire)
 	if err != nil {
 		return nil, err
 	}
@@ -186,12 +186,12 @@ func (c *StatusCore) StatusSetChannelOffline(in *status.TLStatusSetChannelOfflin
 		if err != nil || uid64 <= 0 {
 			continue
 		}
-		_, err = c.svcCtx.Dao.KV.HdelCtx(c.ctx, getUserChannelsKey(uid64), strconv.FormatInt(in.GetChannelId(), 10))
+		err = c.svcCtx.Dao.KV.HdelCtx(c.ctx, getUserChannelsKey(uid64), strconv.FormatInt(in.GetChannelId(), 10))
 		if err != nil {
 			return nil, err
 		}
 	}
-	_, err = c.svcCtx.Dao.KV.DelCtx(c.ctx, getChannelUsersKey(in.GetChannelId()))
+	err = c.svcCtx.Dao.KV.DelCtx(c.ctx, getChannelUsersKey(in.GetChannelId()))
 	if err != nil {
 		return nil, err
 	}
