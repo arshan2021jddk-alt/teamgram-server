@@ -1,45 +1,33 @@
-name: Extract Only gnetway
+name: Prepare Vendor Package for Offline Build
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # دستی اجرا کن
   push:
     branches:
       - 'codex/add-group-voice-call-feature'
 
 jobs:
-  extract:
+  package:
     runs-on: ubuntu-latest
     steps:
-      - name: Login to GHCR
-        uses: docker/login-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          go-version: '1.22'   # نسخه مورد نیاز پروژه (از go.mod چک کن)
 
-      - name: Pull image
-        run: docker pull ghcr.io/${{ github.repository_owner }}/teamgram:latest
+      - name: Download dependencies (vendor)
+        run: go mod vendor
 
-      - name: Inspect and extract
+      - name: Create package
         run: |
-          echo "=== Checking /app/bin ==="
-          docker run --rm --entrypoint="" ghcr.io/${{ github.repository_owner }}/teamgram:latest ls -lh /app/bin/gnetway || echo "gnetway NOT FOUND"
+          # فشرده‌سازی کل پروژه (شامل vendor) ولی بدون پوشه‌های غیرضروری
+          zip -r teamgram-vendor.zip . -x ".git/*" ".github/*" "docker/*" "*.log"
 
-          echo "=== Extracting gnetway ==="
-          docker create --name tmp-extract ghcr.io/${{ github.repository_owner }}/teamgram:latest
-          docker cp tmp-extract:/app/bin/gnetway ./gnetway
-          docker rm tmp-extract
-
-          if [ -f ./gnetway ]; then
-            echo "Extraction successful. File size:"
-            ls -lh ./gnetway
-          else
-            echo "ERROR: gnetway was not extracted!"
-            exit 1
-          fi
-
-      - name: Upload gnetway
+      - name: Upload vendor package
         uses: actions/upload-artifact@v4
         with:
-          name: gnetway
-          path: ./gnetway
+          name: teamgram-vendor
+          path: teamgram-vendor.zip
