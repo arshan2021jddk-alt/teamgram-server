@@ -35,24 +35,31 @@ func makeBotDataUpdateMap(in *user.TLUserUpdateBotData) (map[string]interface{},
 	if in.GetBotChatHistory() != nil {
 		cMap["bot_chat_history"] = in.GetBotChatHistory().PredicateName == mtproto.Predicate_boolTrue
 	}
+
 	if in.GetBotNochats() != nil {
 		cMap["bot_nochats"] = in.GetBotNochats().PredicateName == mtproto.Predicate_boolTrue
 	}
+
 	if in.GetBotInlineGeo() != nil {
 		cMap["bot_inline_geo"] = in.GetBotInlineGeo().PredicateName == mtproto.Predicate_boolTrue
 	}
+
 	if in.GetBotAttachMenu() != nil {
 		v := in.GetBotAttachMenu().PredicateName == mtproto.Predicate_boolTrue
 		cMap["bot_attach_menu"] = v
 		cMap["attach_menu_enabled"] = v
 	}
+
 	if in.GetBotInlinePlaceholder() != nil {
 		placeholder := strings.TrimSpace(in.GetBotInlinePlaceholder().GetValue())
+
 		if len([]rune(placeholder)) > 64 {
 			return nil, mtproto.ErrBadRequest
 		}
+
 		cMap["bot_inline_placeholder"] = placeholder
 	}
+
 	if in.GetBotHasMainApp() != nil {
 		cMap["bot_has_main_app"] = in.GetBotHasMainApp().PredicateName == mtproto.Predicate_boolTrue
 	}
@@ -71,9 +78,11 @@ func (c *UserCore) UserUpdateBotData(in *user.TLUserUpdateBotData) (*mtproto.Boo
 	if err != nil {
 		return nil, err
 	}
+
 	if botsDO == nil {
 		return nil, mtproto.ErrBotInvalid
 	}
+
 	if c.MD == nil || !canMutateBotByOwner(c.MD.UserId, botsDO.CreatorUserId) {
 		return nil, mtproto.ErrBotInvalid
 	}
