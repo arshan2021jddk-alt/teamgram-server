@@ -37,26 +37,30 @@ func normalizeBotCommandDesc(v string) string {
 
 func validateBotCommands(commands []*mtproto.BotCommand) error {
 	if len(commands) > maxBotCommands {
-		return mtproto.NewRpcError(mtproto.ErrBadRequest)
+		return mtproto.ErrBadRequest
 	}
 
 	seen := make(map[string]struct{}, len(commands))
 	for _, cmd := range commands {
 		if cmd == nil {
-			return mtproto.NewRpcError(mtproto.ErrBadRequest)
+			return mtproto.ErrBadRequest
 		}
 
 		name := normalizeBotCommandName(cmd.GetCommand())
 		desc := normalizeBotCommandDesc(cmd.GetDescription())
+
 		if name == "" || len(name) > maxBotCommandNameLen || !botCommandPattern.MatchString(name) {
-			return mtproto.NewRpcError(mtproto.ErrBadRequest)
+			return mtproto.ErrBadRequest
 		}
+
 		if desc == "" || len([]rune(desc)) > maxBotCommandDescLenRune {
-			return mtproto.NewRpcError(mtproto.ErrBadRequest)
+			return mtproto.ErrBadRequest
 		}
+
 		if _, ok := seen[name]; ok {
-			return mtproto.NewRpcError(mtproto.ErrBadRequest)
+			return mtproto.ErrBadRequest
 		}
+
 		seen[name] = struct{}{}
 	}
 
@@ -65,6 +69,7 @@ func validateBotCommands(commands []*mtproto.BotCommand) error {
 
 func makeBotCommandsDOList(botID int64, commands []*mtproto.BotCommand) []*dataobject.BotCommandsDO {
 	bulk := make([]*dataobject.BotCommandsDO, 0, len(commands))
+
 	for _, cmd := range commands {
 		bulk = append(bulk, &dataobject.BotCommandsDO{
 			BotId:       botID,
@@ -80,11 +85,13 @@ func makeBotCommandsDOList(botID int64, commands []*mtproto.BotCommand) []*datao
 // user.setBotCommands user_id:long bot_id:long commands:Vector<BotCommand> = Bool;
 func (c *UserCore) UserSetBotCommands(in *user.TLUserSetBotCommands) (*mtproto.Bool, error) {
 	if in == nil || in.BotId <= 0 {
-		return nil, mtproto.NewRpcError(mtproto.ErrBadRequest)
+		return nil, mtproto.ErrBadRequest
 	}
+
 	if c.MD == nil || c.MD.UserId == 0 {
 		return nil, mtproto.ErrBotInvalid
 	}
+
 	if in.UserId > 0 && c.MD.UserId != in.UserId {
 		return nil, mtproto.ErrBotInvalid
 	}
@@ -97,6 +104,7 @@ func (c *UserCore) UserSetBotCommands(in *user.TLUserSetBotCommands) (*mtproto.B
 	if err != nil {
 		return nil, err
 	}
+
 	if botsDO == nil || botsDO.CreatorUserId != c.MD.UserId {
 		return nil, mtproto.ErrBotInvalid
 	}
@@ -114,6 +122,7 @@ func (c *UserCore) UserSetBotCommands(in *user.TLUserSetBotCommands) (*mtproto.B
 		bulk := makeBotCommandsDOList(in.BotId, in.Commands)
 		_, _, result.Err = c.svcCtx.Dao.BotCommandsDAO.InsertBulkTx(tx, bulk)
 	})
+
 	if tR.Err != nil {
 		return nil, tR.Err
 	}

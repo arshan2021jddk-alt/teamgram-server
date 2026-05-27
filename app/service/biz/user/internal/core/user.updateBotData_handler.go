@@ -35,24 +35,31 @@ func makeBotDataUpdateMap(in *user.TLUserUpdateBotData) (map[string]interface{},
 	if in.GetBotChatHistory() != nil {
 		cMap["bot_chat_history"] = in.GetBotChatHistory().PredicateName == mtproto.Predicate_boolTrue
 	}
+
 	if in.GetBotNochats() != nil {
 		cMap["bot_nochats"] = in.GetBotNochats().PredicateName == mtproto.Predicate_boolTrue
 	}
+
 	if in.GetBotInlineGeo() != nil {
 		cMap["bot_inline_geo"] = in.GetBotInlineGeo().PredicateName == mtproto.Predicate_boolTrue
 	}
+
 	if in.GetBotAttachMenu() != nil {
 		v := in.GetBotAttachMenu().PredicateName == mtproto.Predicate_boolTrue
 		cMap["bot_attach_menu"] = v
 		cMap["attach_menu_enabled"] = v
 	}
+
 	if in.GetBotInlinePlaceholder() != nil {
 		placeholder := strings.TrimSpace(in.GetBotInlinePlaceholder().GetValue())
+
 		if len([]rune(placeholder)) > 64 {
-			return nil, mtproto.NewRpcError(mtproto.ErrBadRequest)
+			return nil, mtproto.ErrBadRequest
 		}
+
 		cMap["bot_inline_placeholder"] = placeholder
 	}
+
 	if in.GetBotHasMainApp() != nil {
 		cMap["bot_has_main_app"] = in.GetBotHasMainApp().PredicateName == mtproto.Predicate_boolTrue
 	}
@@ -64,16 +71,18 @@ func makeBotDataUpdateMap(in *user.TLUserUpdateBotData) (map[string]interface{},
 // user.updateBotData flags:# user_id:long bot_chat_history:flags.15?Bool bot_nochats:flags.16?Bool bot_inline_geo:flags.21?Bool bot_attach_menu:flags.27?Bool bot_inline_placeholder:flags.19?string = Bool;
 func (c *UserCore) UserUpdateBotData(in *user.TLUserUpdateBotData) (*mtproto.Bool, error) {
 	if in == nil || in.BotId <= 0 {
-		return nil, mtproto.NewRpcError(mtproto.ErrBadRequest)
+		return nil, mtproto.ErrBadRequest
 	}
 
 	botsDO, err := c.svcCtx.BotsDAO.Select(c.ctx, in.BotId)
 	if err != nil {
 		return nil, err
 	}
+
 	if botsDO == nil {
 		return nil, mtproto.ErrBotInvalid
 	}
+
 	if c.MD == nil || !canMutateBotByOwner(c.MD.UserId, botsDO.CreatorUserId) {
 		return nil, mtproto.ErrBotInvalid
 	}
