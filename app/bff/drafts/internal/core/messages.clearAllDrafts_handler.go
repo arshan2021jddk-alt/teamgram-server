@@ -58,7 +58,7 @@ func (c *DraftsCore) MessagesClearAllDrafts(in *mtproto.TLMessagesClearAllDrafts
 
 			syncUpdates.AddSafeUser(user)
 		case mtproto.PEER_CHAT:
-			chat, _ := c.svcCtx.Dao.ChatClient.ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
+			chat, _ := c.svcCtx.Dao.ChatClient.Client().ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
 				ChatId: peer.PeerId,
 			})
 

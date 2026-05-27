@@ -49,7 +49,7 @@ func (c *DialogsCore) MessagesSetTyping(in *mtproto.TLMessagesSetTyping) (*mtpro
 			Updates: updates,
 		})
 	case mtproto.PEER_CHAT:
-		chat, err := c.svcCtx.Dao.ChatClient.ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
+		chat, err := c.svcCtx.Dao.ChatClient.Client().ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
 			ChatId: peer.PeerId,
 		})
 		_ = err
