@@ -47,7 +47,7 @@ func (c *ChatInvitesCore) MessagesHideChatJoinRequest(in *mtproto.TLMessagesHide
 		return nil, mtproto.ErrPeerIdInvalid
 	}
 
-	mChat, err := c.svcCtx.Dao.ChatClient.ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
+	mChat, err := c.svcCtx.Dao.ChatClient.Client().ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
 		ChatId: peer.PeerId,
 	})
 	if err != nil {

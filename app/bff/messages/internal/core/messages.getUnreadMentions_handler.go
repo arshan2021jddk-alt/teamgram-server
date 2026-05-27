@@ -105,9 +105,18 @@ func (c *MessagesCore) MessagesGetUnreadMentions(in *mtproto.TLMessagesGetUnread
 		//	NextRate: nil,
 		//	Pts:      channel.Pts(),
 		//}).To_Messages_Messages()
-		c.Logger.Errorf("messages.readHistory blocked, License key from https://teamgram.net required to unlock enterprise features.")
-
-		return nil, mtproto.ErrEnterpriseIsBlocked
+		// TODO: channel unread-mentions pipeline is not wired in OSS build yet.
+		// Return an empty channel-messages container instead of enterprise block
+		// so clients can continue without fatal errors.
+		rValues = mtproto.MakeTLMessagesChannelMessages(&mtproto.Messages_Messages{
+			Messages: []*mtproto.Message{},
+			Chats:    []*mtproto.Chat{},
+			Users:    []*mtproto.User{},
+			Inexact:  false,
+			Count:    0,
+			NextRate: nil,
+			Pts:      0,
+		}).To_Messages_Messages()
 	default:
 		err = mtproto.ErrPeerIdInvalid
 		c.Logger.Errorf("messages.getHistory - error: %v", err)

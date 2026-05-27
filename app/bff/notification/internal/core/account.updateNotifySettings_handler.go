@@ -77,7 +77,7 @@ func (c *NotificationCore) AccountUpdateNotifySettings(in *mtproto.TLAccountUpda
 			_ = peerUser
 		}
 	case mtproto.PEER_CHAT:
-		peerChat2, err2 := c.svcCtx.Dao.ChatClient.ChatGetMutableChat(c.ctx, &chat.TLChatGetMutableChat{
+		peerChat2, err2 := c.svcCtx.Dao.ChatClient.Client().ChatGetMutableChat(c.ctx, &chat.TLChatGetMutableChat{
 			ChatId: peer.PeerId,
 		})
 		if err2 != nil {

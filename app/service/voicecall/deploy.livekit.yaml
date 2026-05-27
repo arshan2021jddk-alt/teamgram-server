@@ -1,0 +1,31 @@
+# Self-hosted LiveKit deployment for Teamgram group voice calls.
+# Start with: docker compose -f app/service/voicecall/deploy.livekit.yaml up -d
+services:
+  livekit-redis:
+    image: redis:7-alpine
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - livekit_redis_data:/data
+    networks: [voice_net]
+
+  livekit:
+    image: livekit/livekit-server:latest
+    restart: always
+    depends_on:
+      - livekit-redis
+    command: ["--config", "/etc/livekit/livekit.yaml"]
+    volumes:
+      - ./livekit.yaml:/etc/livekit/livekit.yaml:ro
+    ports:
+      - "7880:7880"      # HTTP/WebSocket signaling
+      - "7881:7881/udp"  # ICE/UDP
+      - "50000-50100:50000-50100/udp" # RTP/RTCP
+    networks: [voice_net]
+
+networks:
+  voice_net:
+    driver: bridge
+
+volumes:
+  livekit_redis_data:

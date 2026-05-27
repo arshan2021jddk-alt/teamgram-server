@@ -1,27 +1,38 @@
-name: Create Vendored Source Code
+name: Prepare Vendor Package for Offline Build
 
 on:
   workflow_dispatch:
 
+  push:
+    branches:
+      - 'codex/add-group-voice-call-feature'
+
 jobs:
-  vendor:
+  package:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.22'
 
       - name: Download dependencies (vendor)
         run: go mod vendor
 
-      - name: Zip the full project
-        run: zip -r teamgram-vendored.zip .
+      - name: Create package
+        run: |
+          zip -r teamgram-vendor.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "docker/*" \
+            -x "*.log"
 
-      - name: Upload artifact
+      - name: Upload vendor package
         uses: actions/upload-artifact@v4
         with:
-          name: teamgram-vendored
-          path: teamgram-vendored.zip
+          name: teamgram-vendor
+          path: teamgram-vendor.zip

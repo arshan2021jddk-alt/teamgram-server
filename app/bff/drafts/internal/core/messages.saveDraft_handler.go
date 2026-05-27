@@ -99,7 +99,7 @@ func (c *DraftsCore) MessagesSaveDraft(in *mtproto.TLMessagesSaveDraft) (*mtprot
 		user, _ := users.GetUnsafeUser(c.MD.UserId, peer.PeerId)
 		syncUpdates.AddSafeUser(user)
 	case mtproto.PEER_CHAT:
-		chat, _ := c.svcCtx.Dao.ChatClient.ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
+		chat, _ := c.svcCtx.Dao.ChatClient.Client().ChatGetMutableChat(c.ctx, &chatpb.TLChatGetMutableChat{
 			ChatId: peer.PeerId,
 		})
 		syncUpdates.AddSafeChat(chat.ToUnsafeChat(c.MD.UserId))
