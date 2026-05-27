@@ -1,7 +1,8 @@
 name: Prepare Vendor Package for Offline Build
 
 on:
-  workflow_dispatch:   # دستی اجرا کن
+  workflow_dispatch:
+
   push:
     branches:
       - 'codex/add-group-voice-call-feature'
@@ -9,6 +10,7 @@ on:
 jobs:
   package:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,15 +18,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'   # نسخه مورد نیاز پروژه (از go.mod چک کن)
+          go-version: '1.22'
 
       - name: Download dependencies (vendor)
         run: go mod vendor
 
       - name: Create package
         run: |
-          # فشرده‌سازی کل پروژه (شامل vendor) ولی بدون پوشه‌های غیرضروری
-          zip -r teamgram-vendor.zip . -x ".git/*" ".github/*" "docker/*" "*.log"
+          zip -r teamgram-vendor.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "docker/*" \
+            -x "*.log"
 
       - name: Upload vendor package
         uses: actions/upload-artifact@v4
